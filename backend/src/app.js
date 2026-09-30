@@ -12,6 +12,10 @@ const authRoutes = require('./routes/authRoutes');
 const empresasRoutes = require('./routes/empresasRoutes');
 const usuariosRoutes = require('./routes/usuariosRoutes');
 const localidadesRoutes = require('./routes/localidadesRoutes');
+const pessoasRoutes = require('./routes/pessoasRoutes');
+const servicosRoutes = require('./routes/servicosRoutes');
+const ordensServicoRoutes = require('./routes/ordensServicoRoutes');
+const financeiroRoutes = require('./routes/financeiroRoutes');
 const sistemaRoutes = require('./routes/sistemaRoutes');
 
 const app = express();
@@ -28,6 +32,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/empresas', empresasRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/localidades', localidadesRoutes);
+
+// Cadastros POR EMPRESA (autenticar + exigirEmpresa dentro do arquivo de rotas).
+app.use('/api/pessoas', pessoasRoutes);
+app.use('/api/servicos', servicosRoutes);
+app.use('/api/ordens-servico', ordensServicoRoutes);
+app.use('/api/financeiro', financeiroRoutes);
 app.use('/api/sistema', sistemaRoutes);
 
 app.use((req, res) => {

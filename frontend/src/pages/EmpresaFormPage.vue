@@ -109,65 +109,7 @@
               <div class="icon-badge q-mr-sm"><q-icon name="place" color="primary" size="20px" /></div>
               <div class="text-subtitle1 text-weight-bold">Endereço</div>
             </div>
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-sm-4">
-                <q-input
-                  v-model="form.cep"
-                  v-bind="campo"
-                  label="CEP"
-                  mask="#####-###"
-                  unmasked-value
-                  :loading="buscandoCep"
-                  hint="Preenche o endereço automaticamente"
-                  @update:model-value="aoMudarCep"
-                />
-              </div>
-              <div class="col-12 col-sm-8">
-                <q-input v-model="form.logradouro" v-bind="campo" label="Logradouro" maxlength="150" />
-              </div>
-              <div class="col-6 col-sm-3">
-                <q-input v-model="form.numero" v-bind="campo" label="Número" maxlength="20" />
-              </div>
-              <div class="col-6 col-sm-4">
-                <q-input v-model="form.complemento" v-bind="campo" label="Complemento" maxlength="80" />
-              </div>
-              <div class="col-12 col-sm-5">
-                <q-input v-model="form.bairro" v-bind="campo" label="Bairro" maxlength="80" />
-              </div>
-              <div class="col-4 col-sm-3">
-                <q-select
-                  v-model="form.uf"
-                  v-bind="campo"
-                  label="UF"
-                  clearable
-                  emit-value
-                  map-options
-                  :options="opcoesUf"
-                  @update:model-value="aoMudarUf"
-                />
-              </div>
-              <div class="col-8 col-sm-9">
-                <q-select
-                  v-model="form.cidade"
-                  v-bind="campo"
-                  label="Cidade"
-                  clearable
-                  emit-value
-                  map-options
-                  use-input
-                  input-debounce="150"
-                  :options="opcoesCidadeFiltradas"
-                  :loading="carregandoCidades"
-                  :disable="!form.uf"
-                  :hint="!form.uf ? 'Selecione a UF primeiro' : undefined"
-                  @filter="filtrarCidades"
-                >
-                  <template #no-option>
-                    <q-item><q-item-section class="text-grey-7">Nenhuma cidade encontrada</q-item-section></q-item>
-                  </template>
-                </q-select>
-              </div>
-            </div>
+            <campo-endereco :form="form" :readonly="somenteLeitura" />
           </q-card>
 
           <!-- Contato -->
@@ -297,7 +239,8 @@ import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../services/api';
 import { auth } from '../stores/auth';
-import { cnpjValido, cpfValido, mascaraTelefone, somenteDigitos } from '../utils/documento';
+import { cnpjValido, cpfValido, mascaraTelefone } from '../utils/documento';
+import CampoEndereco from '../components/CampoEndereco.vue';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -333,7 +276,7 @@ const form = reactive({
   inscricaoMunicipal: '',
   regimeTributario: null,
   cep: '',
-  logradouro: '',
+  rua: '',
   numero: '',
   complemento: '',
   bairro: '',
@@ -366,11 +309,8 @@ watch(ieIsento, (isento) => {
   else if (form.inscricaoEstadual === 'ISENTO') form.inscricaoEstadual = '';
 });
 
-// --- UF / Cidade --------------------------------------------------------
+// --- UF (select "UF do CRO"; o endereço fica com o CampoEndereco) -------
 const opcoesUf = ref([]);
-const cidadesDaUf = ref([]); // [{ label, value }]
-const opcoesCidadeFiltradas = ref([]);
-const carregandoCidades = ref(false);
 
 async function carregarUfs() {
   try {
@@ -378,73 +318,6 @@ async function carregarUfs() {
     opcoesUf.value = data.map((u) => ({ label: u.sigla, value: u.sigla }));
   } catch (err) {
     notificarErro('Não foi possível carregar as UFs.', err);
-  }
-}
-
-async function carregarCidades(uf) {
-  cidadesDaUf.value = [];
-  opcoesCidadeFiltradas.value = [];
-  if (!uf) return;
-  carregandoCidades.value = true;
-  try {
-    const { data } = await api.get('/localidades/cidades', { params: { uf } });
-    cidadesDaUf.value = data.map((c) => ({ label: c.nome, value: c.codigoIbge, busca: normalizar(c.nome) }));
-    opcoesCidadeFiltradas.value = cidadesDaUf.value;
-  } catch (err) {
-    notificarErro('Não foi possível carregar as cidades.', err);
-  } finally {
-    carregandoCidades.value = false;
-  }
-}
-
-// Busca sem acento: "sao paulo" encontra "São Paulo".
-function normalizar(texto) {
-  return String(texto).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-}
-
-function filtrarCidades(val, update) {
-  update(() => {
-    const termo = normalizar(val);
-    opcoesCidadeFiltradas.value = termo ? cidadesDaUf.value.filter((c) => c.busca.includes(termo)) : cidadesDaUf.value;
-  });
-}
-
-async function aoMudarUf(uf) {
-  form.cidade = null;
-  await carregarCidades(uf);
-}
-
-// --- CEP (ViaCEP) -------------------------------------------------------
-// Consulta pública do ViaCEP direto do navegador. Preenche logradouro,
-// bairro, UF e cidade (pelo código IBGE, que é a PK da tabela cidade). Só
-// sobrescreve campos que vieram preenchidos na resposta.
-const buscandoCep = ref(false);
-async function aoMudarCep(valor) {
-  const cep = somenteDigitos(valor);
-  if (cep.length !== 8 || somenteLeitura.value) return;
-  buscandoCep.value = true;
-  try {
-    const resposta = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-    const dados = await resposta.json();
-    if (dados.erro) {
-      $q.notify({ type: 'warning', message: 'CEP não encontrado.' });
-      return;
-    }
-    if (dados.logradouro) form.logradouro = dados.logradouro;
-    if (dados.bairro) form.bairro = dados.bairro;
-    if (dados.complemento && !form.complemento) form.complemento = dados.complemento;
-    if (dados.uf) {
-      if (form.uf !== dados.uf) {
-        form.uf = dados.uf;
-        await carregarCidades(dados.uf);
-      }
-      if (dados.ibge) form.cidade = Number(dados.ibge);
-    }
-  } catch (err) {
-    console.error(err);
-    $q.notify({ type: 'warning', message: 'Não foi possível consultar o CEP. Preencha o endereço manualmente.' });
-  } finally {
-    buscandoCep.value = false;
   }
 }
 
@@ -490,7 +363,7 @@ async function carregarParaEdicao() {
       inscricaoEstadual: data.inscricaoEstadual || '',
       inscricaoMunicipal: data.inscricaoMunicipal || '',
       cep: data.cep || '',
-      logradouro: data.logradouro || '',
+      rua: data.rua || '',
       numero: data.numero || '',
       complemento: data.complemento || '',
       bairro: data.bairro || '',
@@ -503,7 +376,6 @@ async function carregarParaEdicao() {
       observacao: data.observacao || '',
     });
     ieIsento.value = data.inscricaoEstadual === 'ISENTO';
-    if (form.uf) await carregarCidades(form.uf);
     await carregarLogoAtual();
   } catch (err) {
     if (err.response?.status !== 404) notificarErro('Não foi possível carregar a empresa.', err);

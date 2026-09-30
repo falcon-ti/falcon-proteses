@@ -12,6 +12,24 @@ export const MENU = [
     itens: [{ label: 'Painel', icon: 'o_dashboard', to: '/inicio', exact: true, tela: 'dashboard' }],
   },
   {
+    titulo: 'Operações',
+    itens: [{ label: 'Ordens de Serviço', icon: 'o_assignment', to: '/ordens-servico', tela: 'ordens-servico' }],
+  },
+  {
+    titulo: 'Financeiro',
+    itens: [
+      { label: 'Caixa', icon: 'o_point_of_sale', to: '/financeiro/caixa', tela: 'caixa' },
+      { label: 'Contas a Receber', icon: 'o_request_quote', to: '/financeiro/contas-receber', tela: 'contas-receber' },
+    ],
+  },
+  {
+    titulo: 'Cadastros',
+    itens: [
+      { label: 'Pessoas', icon: 'o_groups', to: '/pessoas', tela: 'pessoas' },
+      { label: 'Serviços', icon: 'o_medical_services', to: '/servicos', tela: 'servicos' },
+    ],
+  },
+  {
     titulo: 'Administração',
     itens: [
       {

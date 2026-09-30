@@ -23,6 +23,42 @@ const SECOES = [
     telas: [{ chave: 'dashboard', label: 'Painel', acoes: ['ver'] }],
   },
   {
+    titulo: 'Operações',
+    telas: [
+      {
+        chave: 'ordens-servico',
+        label: 'Ordens de Serviço (Inativar = cancelar OS)',
+        acoes: TODAS,
+        especiais: [
+          { chave: 'concluir', label: 'Concluir OS (informar pagamento)' },
+          { chave: 'reabrir', label: 'Reabrir OS concluída' },
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'Financeiro',
+    telas: [
+      { chave: 'caixa', label: 'Caixa (lançamentos à vista e recebimentos)', acoes: ['ver'] },
+      {
+        chave: 'contas-receber',
+        label: 'Contas a Receber',
+        acoes: ['ver'],
+        especiais: [
+          { chave: 'baixar', label: 'Dar baixa (receber)' },
+          { chave: 'estornar', label: 'Estornar baixa' },
+        ],
+      },
+    ],
+  },
+  {
+    titulo: 'Cadastros',
+    telas: [
+      { chave: 'pessoas', label: 'Pessoas (clientes, fornecedores, funcionários)', acoes: TODAS },
+      { chave: 'servicos', label: 'Serviços', acoes: TODAS },
+    ],
+  },
+  {
     titulo: 'Administração · Cadastros',
     telas: [{ chave: 'empresas', label: 'Empresas', acoes: TODAS }],
   },

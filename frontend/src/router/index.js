@@ -7,6 +7,13 @@ import EmpresasPage from '../pages/EmpresasPage.vue';
 import EmpresaFormPage from '../pages/EmpresaFormPage.vue';
 import UsuariosPage from '../pages/UsuariosPage.vue';
 import UsuarioFormPage from '../pages/UsuarioFormPage.vue';
+import PessoasPage from '../pages/PessoasPage.vue';
+import PessoaFormPage from '../pages/PessoaFormPage.vue';
+import ServicosPage from '../pages/ServicosPage.vue';
+import OrdensServicoPage from '../pages/OrdensServicoPage.vue';
+import OrdemServicoFormPage from '../pages/OrdemServicoFormPage.vue';
+import CaixaPage from '../pages/CaixaPage.vue';
+import ContasReceberPage from '../pages/ContasReceberPage.vue';
 
 // Toda rota exige login, menos as com "meta.public". "meta.privilegio:
 // [tela, acao]" exige o privilégio (catálogo em
@@ -22,6 +29,18 @@ const routes = [
   { path: '/login', name: 'login', component: LoginPage, meta: { public: true } },
   { path: '/sem-acesso', name: 'sem-acesso', component: SemAcessoPage },
   { path: '/inicio', name: 'inicio', component: InicioPage, meta: { privilegio: ['dashboard', 'ver'] } },
+
+  // Lançamentos e cadastros POR EMPRESA (meta.exigeEmpresa).
+  { path: '/ordens-servico', name: 'ordens-servico', component: OrdensServicoPage, meta: { privilegio: ['ordens-servico', 'ver'], exigeEmpresa: true } },
+  { path: '/ordens-servico/nova', name: 'ordem-nova', component: OrdemServicoFormPage, meta: { privilegio: ['ordens-servico', 'incluir'], exigeEmpresa: true } },
+  { path: '/ordens-servico/:id', name: 'ordem-editar', component: OrdemServicoFormPage, meta: { privilegio: ['ordens-servico', 'ver'], exigeEmpresa: true } },
+  { path: '/financeiro/caixa', name: 'caixa', component: CaixaPage, meta: { privilegio: ['caixa', 'ver'], exigeEmpresa: true } },
+  { path: '/financeiro/contas-receber', name: 'contas-receber', component: ContasReceberPage, meta: { privilegio: ['contas-receber', 'ver'], exigeEmpresa: true } },
+
+  { path: '/pessoas', name: 'pessoas', component: PessoasPage, meta: { privilegio: ['pessoas', 'ver'], exigeEmpresa: true } },
+  { path: '/pessoas/nova', name: 'pessoa-nova', component: PessoaFormPage, meta: { privilegio: ['pessoas', 'incluir'], exigeEmpresa: true } },
+  { path: '/pessoas/:id', name: 'pessoa-editar', component: PessoaFormPage, meta: { privilegio: ['pessoas', 'ver'], exigeEmpresa: true } },
+  { path: '/servicos', name: 'servicos', component: ServicosPage, meta: { privilegio: ['servicos', 'ver'], exigeEmpresa: true } },
 
   { path: '/empresas', name: 'empresas', component: EmpresasPage, meta: { privilegio: ['empresas', 'ver'] } },
   { path: '/empresas/nova', name: 'empresa-nova', component: EmpresaFormPage, meta: { privilegio: ['empresas', 'incluir'] } },

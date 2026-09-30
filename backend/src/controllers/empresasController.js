@@ -17,7 +17,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TAMANHO_MAX_LOGO = 1024 * 1024; // 1 MB
 
 const COLUNAS = `e.id, e.tipo_pessoa, e.cnpj_cpf, e.razao_social, e.nome_fantasia, e.inscricao_estadual,
-  e.inscricao_municipal, e.regime_tributario, e.cep, e.logradouro, e.numero, e.complemento, e.bairro,
+  e.inscricao_municipal, e.regime_tributario, e.cep, e.rua, e.numero, e.complemento, e.bairro,
   e.cidade, c.nome AS cidade_nome, e.uf, e.telefone, e.celular, e.email, e.site, e.responsavel_tecnico,
   e.cro_responsavel, e.cro_uf, e.observacao, e.situacao, (e.logo IS NOT NULL) AS tem_logo`;
 
@@ -34,7 +34,7 @@ function paraApi(r) {
     inscricaoMunicipal: r.inscricao_municipal,
     regimeTributario: r.regime_tributario,
     cep: r.cep,
-    logradouro: r.logradouro,
+    rua: r.rua,
     numero: r.numero,
     complemento: r.complemento,
     bairro: r.bairro,
@@ -116,7 +116,7 @@ async function prepararEmpresa(body) {
       inscricaoMunicipal: texto(body.inscricaoMunicipal, 20),
       regime,
       cep,
-      logradouro: texto(body.logradouro, 150),
+      rua: texto(body.rua, 150),
       numero: texto(body.numero, 20),
       complemento: texto(body.complemento, 80),
       bairro: texto(body.bairro, 80),
@@ -206,7 +206,7 @@ async function criar(req, res) {
     const { rows } = await client.query(
       `INSERT INTO empresa
          (tipo_pessoa, cnpj_cpf, razao_social, nome_fantasia, inscricao_estadual, inscricao_municipal,
-          regime_tributario, cep, logradouro, numero, complemento, bairro, cidade, uf, telefone, celular,
+          regime_tributario, cep, rua, numero, complemento, bairro, cidade, uf, telefone, celular,
           email, site, responsavel_tecnico, cro_responsavel, cro_uf, observacao, logo, situacao,
           user_insert, user_update)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
@@ -214,7 +214,7 @@ async function criar(req, res) {
        RETURNING id`,
       [
         d.tipoPessoa, d.cnpjCpf, d.razaoSocial, d.nomeFantasia, d.inscricaoEstadual, d.inscricaoMunicipal,
-        d.regime, d.cep, d.logradouro, d.numero, d.complemento, d.bairro, d.cidade, d.uf, d.telefone, d.celular,
+        d.regime, d.cep, d.rua, d.numero, d.complemento, d.bairro, d.cidade, d.uf, d.telefone, d.celular,
         d.email, d.site, d.responsavelTecnico, d.croResponsavel, d.croUf, d.observacao, logo, d.situacao,
         req.usuario.login,
       ]
@@ -255,7 +255,7 @@ async function atualizar(req, res) {
 
   const valores = [
     d.tipoPessoa, d.cnpjCpf, d.razaoSocial, d.nomeFantasia, d.inscricaoEstadual, d.inscricaoMunicipal,
-    d.regime, d.cep, d.logradouro, d.numero, d.complemento, d.bairro, d.cidade, d.uf, d.telefone, d.celular,
+    d.regime, d.cep, d.rua, d.numero, d.complemento, d.bairro, d.cidade, d.uf, d.telefone, d.celular,
     d.email, d.site, d.responsavelTecnico, d.croResponsavel, d.croUf, d.observacao, d.situacao,
     req.usuario.login,
   ];
@@ -270,7 +270,7 @@ async function atualizar(req, res) {
     const { rowCount } = await pool.query(
       `UPDATE empresa SET
          tipo_pessoa = $1, cnpj_cpf = $2, razao_social = $3, nome_fantasia = $4, inscricao_estadual = $5,
-         inscricao_municipal = $6, regime_tributario = $7, cep = $8, logradouro = $9, numero = $10,
+         inscricao_municipal = $6, regime_tributario = $7, cep = $8, rua = $9, numero = $10,
          complemento = $11, bairro = $12, cidade = $13, uf = $14, telefone = $15, celular = $16, email = $17,
          site = $18, responsavel_tecnico = $19, cro_responsavel = $20, cro_uf = $21, observacao = $22,
          situacao = $23, user_update = $24, date_update = now()${clausulaLogo}
