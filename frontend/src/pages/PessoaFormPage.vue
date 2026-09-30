@@ -175,6 +175,17 @@
               <q-toggle v-model="form.ativo" :disable="somenteLeitura" color="primary" />
             </div>
           </q-card>
+
+          <!-- Funcionário: atalho pra tabela de comissões (tela separada, com
+               privilégio próprio "comissoes"). -->
+          <q-card v-if="form.id && form.tipos.includes('funcionario') && auth.pode('comissoes')" flat bordered class="q-pa-md">
+            <div class="row items-center q-mb-sm">
+              <div class="icon-badge q-mr-sm"><q-icon name="o_percent" color="primary" size="20px" /></div>
+              <div class="text-subtitle1 text-weight-bold">Comissões</div>
+            </div>
+            <div class="text-caption text-grey-7 q-mb-sm">Comissão deste funcionário em cada serviço.</div>
+            <q-btn outline no-caps color="grey-8" icon="o_percent" label="Ver / definir comissões" :to="{ name: 'comissoes', query: { funcionario: form.id } }" />
+          </q-card>
         </div>
       </div>
 

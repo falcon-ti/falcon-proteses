@@ -77,11 +77,15 @@ npm run dev                   # http://localhost:9000 (proxy /api -> :3000)
 | GET | /api/ordens-servico · /:id · /opcoes | OS da empresa (`?situacao=A|C|X&busca=&atrasadas=true`); opções = clientes, funcionários e serviços ativos | `ordens-servico.ver` + empresa |
 | POST/PUT | /api/ordens-servico[/:id] | Cria / altera (só aberta) | `ordens-servico.incluir/editar` |
 | POST | /api/ordens-servico/:id/concluir | `{ formaPagamento: 'V'|'P', meioPagamento, parcelas: [{vencimento, valor}], provaRealizada }` → caixa ou contas a receber | `ordens-servico.concluir` |
+| GET | /api/ordens-servico/:id/impressao | Dados da folha de impressão: OS + empresa da sessão (logo em data URL) + cliente | `ordens-servico.ver` + empresa |
 | POST | /api/ordens-servico/:id/reabrir · /cancelar | Reabrir (cancela caixa/parcelas; bloqueia se houver parcela recebida) · cancelar OS aberta | `reabrir` · `inativar` |
 | GET | /api/financeiro/contas-receber[/:id] | Parcelas da empresa (`?situacao=A|P|C&vencDe=&vencAte=&busca=&vencidas=true`) + totais; `/:id` traz as baixas | `contas-receber.ver` + empresa |
 | POST | /api/financeiro/contas-receber/:id/baixar | `{ dataPagamento, valor, juros, desconto, meioPagamento, observacao }` (aceita baixa parcial) → entrada no caixa | `contas-receber.baixar` |
 | POST | /api/financeiro/contas-receber/baixas/:id/estornar | Estorna a baixa e cancela o lançamento de caixa dela | `contas-receber.estornar` |
 | GET | /api/financeiro/caixa | Lançamentos do período (`?de=&ate=&meio=&origem=OS|RECEBIMENTO&cancelados=true`) + totais por meio | `caixa.ver` + empresa |
+| GET | /api/comissoes/funcionarios[/:id] | Funcionários ativos · tabela de comissão de um funcionário (todos os serviços ativos) | `comissoes.ver` + empresa |
+| PUT | /api/comissoes/funcionarios/:id | `{ itens: [{ servico, tipo: 'V'|'P', valor }] }` — valor vazio remove a comissão | `comissoes.editar` |
+| GET | /api/painel | Resumo da empresa para o Painel: blocos `ordens`, `caixa` e `receber`, cada um só se o usuário tiver o privilégio da tela de origem | `dashboard.ver` + empresa |
 | GET | /api/localidades/ufs · /cidades?uf= | UFs e municípios IBGE | Logado |
 | GET | /api/sistema/info | Servidor/base em uso (rodapé) | Logado |
 
@@ -105,7 +109,14 @@ npm run dev                   # http://localhost:9000 (proxy /api -> :3000)
 - Itens: serviço (valor sugerido da tabela, editável), quantidade, responsável (pessoa tipo **funcionário**) e detalhamento. A descrição do serviço é copiada para o item.
 - Só OS **aberta** é editável. Com prova marcada, só conclui com a prova realizada (o diálogo de concluir pede a confirmação).
 - Concluir: **à vista** → `caixa_movimento` (entrada, meio de pagamento); **a prazo** → `conta_receber` (parcelas; soma tem que bater com o total). Baixa: tela Financeiro › Contas a Receber.
+- **Impressão**: botão "Imprimir" na OS abre `/ordens-servico/:id/imprimir` em outra aba — folha A4 com logo e dados da empresa, cliente, paciente, datas, prova, serviços com detalhamento e responsável, total, observações, pagamento (se concluída) e campos de assinatura. Chama a impressão do navegador automaticamente (dá pra salvar em PDF). Em OS aberta, grava o que está na tela antes de imprimir.
 - Reabrir: marca como cancelados (`situacao = 'C'`) o caixa/parcelas gerados e volta a OS para aberta — bloqueado se alguma parcela já tiver recebimento.
+
+## Comissões — regras
+
+- Tela própria (**Cadastros › Comissões**) com privilégio `comissoes` (ver / editar), separada do cadastro de Pessoas para controlar quem altera. Atalho no cadastro da pessoa do tipo funcionário.
+- Por funcionário × serviço: **R$** (valor fixo por unidade) ou **%** (sobre o total do item, até 100%). Em branco = sem comissão.
+- Ao salvar a OS, cada item grava a comissão calculada (`valor_comissao`) e a regra usada (`comissao_tipo`, `comissao_base`), pelo **responsável** do item. Mudar a tabela não altera OS já concluída; OS aberta é recalculada quando for salva de novo.
 
 ## Financeiro — regras
 

@@ -25,6 +25,7 @@ export const MENU = [
   {
     titulo: 'Cadastros',
     itens: [
+      { label: 'Comissões', icon: 'o_percent', to: '/comissoes', tela: 'comissoes' },
       { label: 'Pessoas', icon: 'o_groups', to: '/pessoas', tela: 'pessoas' },
       { label: 'Serviços', icon: 'o_medical_services', to: '/servicos', tela: 'servicos' },
     ],

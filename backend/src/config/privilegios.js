@@ -56,6 +56,7 @@ const SECOES = [
     telas: [
       { chave: 'pessoas', label: 'Pessoas (clientes, fornecedores, funcionários)', acoes: TODAS },
       { chave: 'servicos', label: 'Serviços', acoes: TODAS },
+      { chave: 'comissoes', label: 'Comissões por funcionário', acoes: ['ver', 'editar'] },
     ],
   },
   {

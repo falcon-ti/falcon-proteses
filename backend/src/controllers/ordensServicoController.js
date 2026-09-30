@@ -134,16 +134,39 @@ async function prepararOrdem(client, empresaId, body) {
   };
 }
 
-async function gravarItens(client, idOrdem, itens) {
+// Grava os itens e calcula a comissão de cada um pela tabela
+// funcionario_comissao (responsável x serviço, da empresa):
+//   'V' -> valor fixo por unidade x quantidade
+//   'P' -> percentual sobre o total do item
+// A regra usada fica gravada no item (comissao_tipo/comissao_base).
+async function gravarItens(client, idOrdem, itens, empresaId) {
   await client.query('DELETE FROM ordem_servico_item WHERE ordem_servico = $1', [idOrdem]);
+  const regras = new Map();
+  if (itens.length) {
+    const { rows } = await client.query(
+      `SELECT funcionario, servico, tipo, valor FROM funcionario_comissao
+       WHERE empresa = $1 AND funcionario = ANY($2) AND servico = ANY($3)`,
+      [empresaId, [...new Set(itens.map((i) => i.responsavel))], [...new Set(itens.map((i) => i.servico))]]
+    );
+    rows.forEach((r) => regras.set(`${r.funcionario}:${r.servico}`, { tipo: r.tipo, valor: Number(r.valor) }));
+  }
   let sequencia = 0;
   for (const i of itens) {
     sequencia += 1;
+    const regra = regras.get(`${i.responsavel}:${i.servico}`);
+    let valorComissao = 0;
+    if (regra) {
+      valorComissao = regra.tipo === 'P'
+        ? Math.round(i.valorTotal * regra.valor) / 100
+        : Math.round(regra.valor * i.quantidade * 100) / 100;
+    }
     await client.query(
       `INSERT INTO ordem_servico_item
-         (ordem_servico, sequencia, servico, descricao, detalhamento, responsavel, quantidade, valor_unitario, valor_total)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [idOrdem, sequencia, i.servico, i.descricao, i.detalhamento, i.responsavel, i.quantidade, i.valorUnitario, i.valorTotal]
+         (ordem_servico, sequencia, servico, descricao, detalhamento, responsavel, quantidade, valor_unitario, valor_total,
+          comissao_tipo, comissao_base, valor_comissao)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+      [idOrdem, sequencia, i.servico, i.descricao, i.detalhamento, i.responsavel, i.quantidade, i.valorUnitario, i.valorTotal,
+        regra ? regra.tipo : null, regra ? regra.valor : null, valorComissao]
     );
   }
 }
@@ -355,7 +378,7 @@ async function criar(req, res) {
         d.provaRealizada, d.observacao, d.valorTotal, req.usuario.login,
       ]
     );
-    await gravarItens(client, rows[0].id, d.itens);
+    await gravarItens(client, rows[0].id, d.itens, req.empresaId);
     await client.query('COMMIT');
     res.status(201).json(await carregarOrdemCompleta(pool, rows[0].id, req.empresaId));
   } catch (err) {
@@ -405,7 +428,7 @@ async function atualizar(req, res) {
       [d.cliente, d.paciente, d.dataEntrada, d.dataEntrega, d.enviarProva, d.provaRealizada, d.observacao, d.valorTotal,
         req.usuario.login, id]
     );
-    await gravarItens(client, id, d.itens);
+    await gravarItens(client, id, d.itens, req.empresaId);
     await client.query('COMMIT');
     res.json(await carregarOrdemCompleta(pool, id, req.empresaId));
   } catch (err) {
@@ -572,4 +595,92 @@ async function cancelar(req, res) {
   }
 }
 
-module.exports = { listar, obter, opcoes, criar, atualizar, concluir, reabrir, cancelar };
+// ------------------------------------------------------------------
+// Impressão
+// ------------------------------------------------------------------
+
+function tipoImagem(buffer) {
+  if (buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png';
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg';
+  if (buffer.subarray(0, 4).toString() === 'RIFF' && buffer.subarray(8, 12).toString() === 'WEBP') return 'image/webp';
+  return null;
+}
+
+// GET /api/ordens-servico/:id/impressao — tudo que a folha impressa precisa:
+// a OS completa + dados da EMPRESA DA SESSÃO (com a logo em data URL, pra
+// não depender de outra requisição autenticada) + dados do cliente.
+// Só exige "ordens-servico.ver" (não precisa acesso ao cadastro de empresas).
+async function impressao(req, res) {
+  const id = idValido(req.params.id);
+  if (!id) return res.status(400).json({ erro: 'Ordem inválida.' });
+  try {
+    const ordem = await carregarOrdemCompleta(pool, id, req.empresaId);
+    if (!ordem) return res.status(404).json({ erro: 'Ordem de serviço não encontrada.' });
+
+    const [empresaRes, clienteRes] = await Promise.all([
+      pool.query(
+        `SELECT e.*, c.nome AS cidade_nome FROM empresa e LEFT JOIN cidade c ON c.codigo_ibge = e.cidade WHERE e.id = $1`,
+        [req.empresaId]
+      ),
+      pool.query(
+        `SELECT p.*, c.nome AS cidade_nome FROM pessoa p LEFT JOIN cidade c ON c.codigo_ibge = p.cidade
+         WHERE p.id = $1 AND p.empresa = $2`,
+        [ordem.cliente, req.empresaId]
+      ),
+    ]);
+    const e = empresaRes.rows[0];
+    const c = clienteRes.rows[0] || {};
+    let logo = null;
+    if (e.logo) {
+      const tipo = tipoImagem(e.logo);
+      if (tipo) logo = `data:${tipo};base64,${e.logo.toString('base64')}`;
+    }
+
+    res.json({
+      ordem,
+      empresa: {
+        razaoSocial: e.razao_social,
+        nomeFantasia: e.nome_fantasia,
+        tipoPessoa: e.tipo_pessoa,
+        cnpjCpf: e.cnpj_cpf,
+        inscricaoEstadual: e.inscricao_estadual,
+        rua: e.rua,
+        numero: e.numero,
+        complemento: e.complemento,
+        bairro: e.bairro,
+        cidadeNome: e.cidade_nome,
+        uf: e.uf,
+        cep: e.cep,
+        telefone: e.telefone,
+        celular: e.celular,
+        email: e.email,
+        site: e.site,
+        responsavelTecnico: e.responsavel_tecnico,
+        croResponsavel: e.cro_responsavel,
+        croUf: e.cro_uf,
+        logo,
+      },
+      cliente: {
+        nome: c.nome,
+        tipoPessoa: c.tipo_pessoa,
+        cnpjCpf: c.cnpj_cpf,
+        registroProfissional: c.registro_profissional,
+        telefone: c.telefone,
+        celular: c.celular,
+        email: c.email,
+        rua: c.rua,
+        numero: c.numero,
+        complemento: c.complemento,
+        bairro: c.bairro,
+        cidadeNome: c.cidade_nome,
+        uf: c.uf,
+      },
+      emitidoPor: req.usuario.login,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro ao montar a impressão da ordem.' });
+  }
+}
+
+module.exports = { listar, obter, opcoes, criar, atualizar, concluir, reabrir, cancelar, impressao };

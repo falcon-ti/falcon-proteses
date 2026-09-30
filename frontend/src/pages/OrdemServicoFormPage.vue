@@ -230,6 +230,7 @@
           @click="reabrirOrdem"
         />
         <q-space />
+        <q-btn v-if="ordem" outline color="grey-8" no-caps icon="print" label="Imprimir" class="q-px-md text-weight-bold" :loading="imprimindo" @click="imprimirOrdem" />
         <q-btn outline color="grey-8" no-caps label="Voltar" class="q-px-md text-weight-bold" :to="{ name: 'ordens-servico' }" />
         <q-btn
           v-if="!somenteLeitura"
@@ -467,6 +468,29 @@ async function concluirOrdem() {
     component: ConcluirOrdemDialog,
     componentProps: { ordem: atual, meiosPagamento: opcoes.value.meiosPagamento },
   }).onOk((concluida) => aplicarOrdem(concluida));
+}
+
+// Imprimir: abre a folha (A4, com logo) em outra aba. Numa OS aberta que o
+// usuário pode editar, grava antes o que estiver na tela, pra impressão sair
+// igual. A aba é aberta ANTES do "await" (senão o navegador bloqueia o pop-up).
+const imprimindo = ref(false);
+async function imprimirOrdem() {
+  const url = router.resolve({ name: 'ordem-imprimir', params: { id: ordem.value.id } }).href;
+  if (somenteLeitura.value) {
+    window.open(url, '_blank');
+    return;
+  }
+  if (!(await formRef.value.validate())) return;
+  const aba = window.open('', '_blank');
+  imprimindo.value = true;
+  const salva = await salvar({ silencioso: true });
+  imprimindo.value = false;
+  if (!salva) {
+    aba?.close();
+    return;
+  }
+  if (aba) aba.location.href = url;
+  else window.open(url, '_blank');
 }
 
 function reabrirOrdem() {

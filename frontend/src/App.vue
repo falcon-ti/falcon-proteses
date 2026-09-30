@@ -244,7 +244,8 @@ const router = useRouter();
 
 const drawerAberto = ref(true);
 const menuRecolhido = ref(false);
-const mostrarLayout = computed(() => !route.meta.public);
+// Sem cabeçalho/menu no login (meta.public) e nas folhas de impressão (meta.impressao).
+const mostrarLayout = computed(() => !route.meta.public && !route.meta.impressao);
 
 // Itens com "acao" (modais) — nenhum por enquanto.
 const ACOES_MENU = {};
