@@ -1,0 +1,224 @@
+/* Estilos globais do app. Aqui ficam ajustes que valem para a
+   aplicação inteira (fonte, fundo, cantos arredondados, etc.) — estilo
+   específico de uma tela fica no <style scoped> da própria página. */
+
+:root {
+  --app-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Cores do app para os modos claro e escuro (ver stores/tema.js). O
+   plugin Dark do Quasar põe "body--dark" no <body> quando o modo escuro
+   está ativo; os componentes do Quasar (q-card, q-table, q-field…) já
+   trocam sozinhos, e o que é nosso usa estas variáveis. Em telas novas,
+   usar var(--app-…) em vez de cor fixa (#fff, rgba(0,0,0,…), #33691e). */
+body {
+  --app-fundo: #f4f6f8;
+  --app-superficie: #ffffff;
+  --app-superficie-suave: #f5f6f8;
+  --app-borda: rgba(0, 0, 0, 0.08);
+  --app-borda-forte: rgba(0, 0, 0, 0.15);
+  --app-texto: #1d2630;
+  --app-texto-2: #3e4853;
+  --app-texto-suave: #5b6b79;
+  --app-texto-apagado: #8c96a3;
+  --app-verde-fundo: rgba(174, 213, 129, 0.28);
+  --app-verde-texto: #33691e;
+  --app-verde-icone: #558b2f;
+  --app-campo-bloqueado: rgba(0, 0, 0, 0.06);
+  --app-grafico-eixo: #757575;
+}
+
+body.body--dark {
+  --app-fundo: #15181c;
+  --app-superficie: #1e2228;
+  --app-superficie-suave: #262b32;
+  --app-borda: rgba(255, 255, 255, 0.1);
+  --app-borda-forte: rgba(255, 255, 255, 0.2);
+  --app-texto: #e6e9ed;
+  --app-texto-2: #c9ced4;
+  --app-texto-suave: #a3acb6;
+  --app-texto-apagado: #7d8793;
+  --app-verde-fundo: rgba(174, 213, 129, 0.16);
+  --app-verde-texto: #c5e1a5;
+  --app-verde-icone: #aed581;
+  --app-campo-bloqueado: rgba(255, 255, 255, 0.06);
+  --app-grafico-eixo: #9ea7b0;
+}
+
+body {
+  font-family: var(--app-font);
+  background: var(--app-fundo);
+}
+
+/* Deixa os títulos um pouco mais "densos" (peso 600/700 em vez do
+   padrão), que é uma marca registrada de interfaces mais modernas. */
+.text-h5,
+.text-h6 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Botões: sem caps-lock, peso um pouco maior e uma leve animação ao
+   passar o mouse — pequenos detalhes que dão sensação de "polimento". */
+.q-btn {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.q-btn.q-btn--standard:not(.q-btn--round):hover {
+  transform: translateY(-1px);
+}
+
+/* Cartões ganham cantos mais arredondados por padrão. */
+.q-card {
+  border-radius: 14px;
+}
+
+/* Item ativo no menu lateral (App.vue, active-class="menu-item-activo")
+   — mesmo tom de verde usado nos outros destaques do app. */
+.menu-item-activo {
+  background: rgba(174, 213, 129, 0.3);
+  color: var(--app-verde-texto);
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+/* Mais espaço entre o label e o valor dos campos outlined/dense usados
+   no app inteiro (o label flutuante fica colado no valor sem isto). */
+.q-field--dense.q-field--outlined.q-field--labeled:not(.q-field--auto-height) .q-field__control {
+  height: 46px;
+}
+
+.q-field--dense.q-field--outlined.q-field--labeled:not(.q-field--auto-height) .q-field__native,
+.q-field--dense.q-field--outlined.q-field--labeled:not(.q-field--auto-height) .q-field__prefix,
+.q-field--dense.q-field--outlined.q-field--labeled:not(.q-field--auto-height) .q-field__suffix {
+  padding-top: 20px;
+  padding-bottom: 2px;
+}
+
+.q-field--dense.q-field--outlined.q-field--labeled.q-field--auto-height .q-field__control {
+  min-height: 54px;
+}
+
+.q-field--dense.q-field--outlined.q-field--labeled.q-field--auto-height .q-field__control-container {
+  padding-top: 20px;
+}
+
+/* O <q-select> usa a variante "auto-height" por baixo dos panos (por
+   causa dos ícones de limpar/abrir), então cai na regra "min-height:
+   54px" logo acima e fica mais alto que os <q-input> dense ao lado
+   (46px) — quebra o alinhamento da grid dos formulários.
+   Aqui forçamos a mesma altura de
+   46px só para <q-select>, sem mexer nos <q-input> com auto-height de
+   verdade (textarea, por exemplo). */
+.q-select.q-field--dense.q-field--outlined.q-field--labeled.q-field--auto-height .q-field__control {
+  height: 46px;
+  min-height: 46px;
+}
+
+.q-field--dense.q-field--outlined.q-field--labeled .q-field__native,
+.q-field--dense.q-field--outlined.q-field--labeled .q-field__input {
+  font-size: 0.92rem;
+}
+
+/* Badge "pill" colorido usado nas colunas de Situação/Perfil/Tipo das grids
+   (UsuariosPage, EmpresasPage) — cor de fundo, texto e
+   do pontinho vêm de um "style" inline por linha (conforme o valor:
+   ativo/inativo, admin/usuario, matriz/sucursal etc.), mas a "forma"
+   do badge (pill arredondado + pontinho) é sempre a mesma, então fica
+   aqui como estilo global. Mantido do falcon-web.
+   */
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.tag-dot {
+  width: 7px;
+  height: 7px;
+  min-width: 7px;
+  border-radius: 50%;
+}
+
+/* Campos desabilitados ou somente leitura (readonly) ganham um fundo
+   cinza — vale pro app inteiro, não só uma tela (ex.: "Data de
+   Emissão" em formulários de lançamento). Sem
+   isso, um <q-input outlined> desabilitado/readonly fica com o mesmo
+   fundo branco de um campo editável e não dá pra distinguir à primeira
+   vista. Aplica em ".q-field__control" (o "box" com a borda), não em
+   ".q-field__control > div" — esse segundo já ganha "opacity: .6
+   !important" do próprio Quasar quando desabilitado, e queremos que o
+   FUNDO fique na cor cheia (só o texto/label é que desbota). */
+.q-field--disabled .q-field__control,
+.q-field--readonly .q-field__control {
+  background: var(--app-campo-bloqueado);
+}
+
+/* O Chrome/Edge pinta um fundo azul/amarelo por cima do campo quando
+   autopreenche (usuário e senha salvos) — some com o fundo branco do
+   input e destoa do resto da tela. O navegador usa !important interno
+   pra essa cor, então só "transition" longo não é suficiente em todo
+   caso — o jeito que realmente funciona é sobrepor com um box-shadow
+   "inset" do branco (a mesma cor de fundo dos campos), grande o
+   suficiente pra cobrir o campo inteiro. Vale pro app inteiro (Login,
+   formulário de Usuário, Perfil etc.), não só uma tela. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 100px var(--app-superficie) inset !important;
+  box-shadow: 0 0 0 100px var(--app-superficie) inset !important;
+  -webkit-text-fill-color: var(--app-texto) !important;
+  caret-color: var(--app-texto);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* ------------------------------------------------------------------
+   Modo escuro — ajustes globais para classes/cores fixas que já
+   existem nas telas (assim não é preciso mexer tela por tela).
+   ------------------------------------------------------------------ */
+
+/* Textos cinza do Quasar (legendas, "text-caption text-grey-7", ícones
+   color="grey-7/8") ficam escuros demais sobre fundo escuro. */
+.body--dark .text-grey-9 { color: #e0e3e7 !important; }
+.body--dark .text-grey-8 { color: #c3c9cf !important; }
+.body--dark .text-grey-7 { color: #a3acb6 !important; }
+.body--dark .text-grey-6 { color: #8c96a3 !important; }
+
+/* Faixas/avisos claros (q-banner "bg-blue-1 text-blue-9", "bg-red-1",
+   linha ativa "bg-green-1") viram versões translúcidas. */
+.body--dark .bg-blue-1 { background: rgba(66, 165, 245, 0.16) !important; }
+.body--dark .bg-red-1 { background: rgba(239, 83, 80, 0.16) !important; }
+.body--dark .bg-green-1 { background: rgba(102, 187, 106, 0.18) !important; }
+.body--dark .text-blue-9 { color: #90caf9 !important; }
+
+/* Badges de Estado/Tipo (.tag-chip): as cores vêm inline por tela
+   (fundo pastel + texto escuro). No escuro o fundo vira um véu da
+   própria cor do texto e o conjunto é clareado, mantendo o mesmo matiz
+   de cada estado (verde ativo, cinza inativo, laranja bloqueado…). */
+.body--dark .tag-chip {
+  background: color-mix(in srgb, currentColor 22%, transparent) !important;
+  filter: brightness(1.75) saturate(0.85);
+}
+
+/* Botões flat/outline com text-color="dark" (ex.: Editar nas grids,
+   toggle Gráfico/Tabla do dashboard) somem sobre fundo escuro. */
+.body--dark .q-btn--flat.text-dark,
+.body--dark .q-btn--outline.text-dark {
+  color: #e0e3e7 !important;
+}
+
+/* Vermelho "negative" (#C10015) fica apagado no escuro: textos e ícones
+   (lixeira, mensagens de erro) usam um tom mais claro. Botões com fundo
+   "bg-negative" continuam com a cor original. */
+.body--dark .text-negative {
+  color: #ef5350 !important;
+}
